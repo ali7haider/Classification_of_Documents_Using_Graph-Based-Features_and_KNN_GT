@@ -138,12 +138,12 @@ def scrape_articles(url_base, pages, min_articles):
 """Main function"""
 
 # URL to scrape
-diseases_symptoms_url = 'https://www.remedieslabs.com/blog/'
+food_url = 'https://www.remedieslabs.com/blog/'
 pages = 3  # Number of pages to scrape
 min_articles = 15  # Minimum number of articles to scrape
 
 # Scrape articles
-articles_data = scrape_articles(diseases_symptoms_url, pages, min_articles)
+articles_data = scrape_articles(food_url, pages, min_articles)
 # Create a directory to save the articles
 os.makedirs("articles", exist_ok=True)
 json_file = 'articles/disease_symtoms_articles.json'

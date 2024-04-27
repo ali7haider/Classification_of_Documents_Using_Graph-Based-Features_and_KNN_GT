@@ -4,6 +4,7 @@ import os
 import json
 import csv
 from datetime import datetime
+import unicodedata
 
 """**Function to scrape articles links from a given URL**"""
 
@@ -11,21 +12,24 @@ from datetime import datetime
 def scrape_articles_links(url):
     try:
         response = requests.get(url)
+        response.encoding = 'utf-8'  # Set the encoding to UTF-8
         soup = BeautifulSoup(response.text, 'html.parser')
-        
-        # Find the div with class "mg-posts-sec-inner"
-        posts_div = soup.find('div', class_='mg-posts-sec-inner')
+        posts_div = soup.find('div', class_='listing')
         
         # Initialize a list to store links
         links = []
 
-        # Find all the <a> tags within the div with class "link-div"
+        # Find all the <div> tags with class "content-box"
         if posts_div:
-            for link in posts_div.find_all('a', class_='link-div'):
-                # Get the href attribute of each <a> tag
-                href = link.get('href')
-                # Append the link to the list
-                links.append(href)
+            for div in posts_div.find_all('div', class_='content-box'):
+                # Find all the <a> tags within the div
+                for h2_tag in div.find_all('h2'):
+                    # Find all the <a> tags within each <h2> tag
+                    for link in h2_tag.find_all('a'):
+                        # Get the href attribute of each <a> tag
+                        href = link.get('href')
+                        # Append the link to the list
+                        links.append(href)
         
         return links
 
@@ -33,28 +37,37 @@ def scrape_articles_links(url):
         print(f"Error scraping links from {url}: {e}")
         return None
 
+
 """**Function to process links**"""
 
 def process_links(articles_links):
     unique_links = set()
-    for i in range(0, len(articles_links)):
-        if articles_links[i] == "https:#":
-            break
-        unique_links.add(articles_links[i])
+    for link in articles_links:
+        if link.startswith("https://timesofindia.indiatimes.com/readersblog"):
+            unique_links.add(link)
     return list(unique_links)
 
+
 """**Function to scrape data from a given URL**"""
+
 
 def scrape_data(url):
     article = {}
     try:
         response = requests.get(url)
         soup = BeautifulSoup(response.text, 'html.parser')
-        article_content = soup.find('div', class_='mg-blog-post-box')
+        article_content = soup.find('div', class_='article')
         if article_content:
             article['link'] = url
-            article['title'] = article_content.find('h1', class_='title').get_text(strip=True)
-            body = article_content.find('article', class_='single')
+            print(url)
+            article_title = article_content.find('div', class_='as-heading')
+            if article_title:
+                # Remove non-ASCII characters from the title
+                article['title'] = ''.join(char for char in article_title.get_text() if ord(char) < 128)
+            else:
+                article['title'] = None  # Handle the case where the title is not found
+
+            body = article_content.find('div', class_='as-wrapper')
             if body:
                 text_elements = []
 
@@ -77,7 +90,8 @@ def scrape_data(url):
             else:
                 # Handle the case where the article body is not found
                 text = None
-            article['content'] = text
+            # Remove non-ASCII characters from the content
+            article['content'] = ''.join(char for char in text if ord(char) < 128) if text else None
             if text:
                 # Calculate the total number of words
                 words_count = len(text.split())
@@ -91,7 +105,6 @@ def scrape_data(url):
     except Exception as e:
         print(f"Error scraping data from {url}: {e}")
         return None
-
 """**Function to save scraped data (dictionary) to a file as JSON format**"""
 
 def save_to_json(data, filename):
@@ -138,16 +151,16 @@ def scrape_articles(url_base, pages, min_articles):
 """Main function"""
 
 # URL to scrape
-food_url = 'https://www.remedieslabs.com/blog/'
-pages = 3  # Number of pages to scrape
+sport_url = 'https://timesofindia.indiatimes.com/readersblog/sports/'
+pages = 10  # Number of pages to scrape
 min_articles = 15  # Minimum number of articles to scrape
 
 # Scrape articles
-articles_data = scrape_articles(food_url, pages, min_articles)
+articles_data = scrape_articles(sport_url, pages, min_articles)
 # Create a directory to save the articles
 os.makedirs("articles", exist_ok=True)
-json_file = 'articles/disease_symtoms_articles.json'
-csv_file = 'articles/disease_symtoms_articles.csv'
+json_file = 'articles/sports_articles.json'
+csv_file = 'articles/sports_articles.csv'
 
 # Save to JSON file
 save_to_json(articles_data, json_file)

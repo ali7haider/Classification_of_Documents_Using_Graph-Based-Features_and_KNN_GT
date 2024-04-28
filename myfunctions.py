@@ -6,6 +6,8 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from gspan_mining import gSpan
 import re
+import numpy as np
+from sklearn.neighbors import KNeighborsClassifier
 
 nltk.download('punkt')
 
@@ -130,3 +132,51 @@ def plot_graph(graph):
     nx.draw_networkx_edge_labels(graph, pos, edge_labels=labels, font_color='red', font_size=10)
     plt.show()
 
+# Function to train the classifier
+def train_classifier(training_graphs, training_labels):
+    # Compute the feature vectors for the training graphs
+    feature_vectors = []
+    for graph in training_graphs:
+        feature_vector = []
+        # Append the entire graph structure to the feature vector
+        # feature_vector.append(graph)
+        # Append the set of nodes to the feature vector
+        feature_vector.append(len(graph.nodes()))
+        feature_vector.append(len(graph.edges()))  # Number of edges
+        feature_vector.append(compute_distances(graph, training_graphs)[0])  # Index of the closest match
+        feature_vector.append(np.mean(list(dict(graph.degree()).values())))  # Mean degree
+        feature_vector.append(np.std(list(dict(graph.degree()).values())))  # Standard deviation of degree
+        feature_vector.append(np.mean(list(nx.clustering(graph).values())))  # Mean clustering coefficient
+        feature_vector.append(np.std(list(nx.clustering(graph).values())))  # Standard deviation of clustering coefficient
+        feature_vectors.append(feature_vector)
+    
+    # Train a k-NN classifier
+    classifier = KNeighborsClassifier(n_neighbors=3)
+    classifier.fit(feature_vectors, training_labels)
+    
+    return classifier
+# Function to compute distances between test graph and all training graphs
+def compute_distances(test_graph, training_graphs):
+    distances = []
+    for training_graph in training_graphs:
+        mcs = compute_mcs(test_graph, training_graph)
+        # Convert MCS to a distance measure and normalize
+        distance = 1 - (mcs / max(len(test_graph.edges()), len(training_graph.edges())))
+        distances.append(distance)
+    return distances
+# Function to compute MCS between two graphs
+def compute_mcs(graph1, graph2):
+    # Extract the set of edges from each graph
+    edges1 = set(graph1.edges())
+    edges2 = set(graph2.edges())
+    
+    # Compute the set of common edges between the two graphs
+    common_edges = edges1.intersection(edges2)
+    
+    # Construct a new graph using the common edges, representing the maximal common subgraph
+    mcs_graph = nx.Graph(list(common_edges))
+    
+    # Calculate the graph distance (negative size of the maximal common subgraph)
+    distance = -len(mcs_graph.edges())
+    
+    return distance

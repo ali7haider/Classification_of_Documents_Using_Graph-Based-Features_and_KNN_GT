@@ -57,12 +57,16 @@ def scrape_data(url):
         if article_content:
             article['link'] = url
             print(url)
-            article_title = article_content.find('div', class_='field-title-field')
-            if article_title:
-                # Remove non-ASCII characters from the title
-                article['title'] = ''.join(char for char in article_title.get_text() if ord(char) < 128)
-            else:
-                article['title'] = None  # Handle the case where the title is not found
+            article_title_div  = article_content.find('div', class_='field-title-field')
+            if article_title_div:
+                h2_tag = article_title_div.find('h2')  # Find the <h2> tag within the div
+                if h2_tag:
+                    article_title = h2_tag.get_text(strip=True)  # Extract text from <h2> tag
+                    article['title']=article_title
+                else:
+                    print("No <h2> tag found within the div")
+                    article['title']=None
+
             body = article_content.find('div', class_='field-body')
             if body:
                 text_elements = []

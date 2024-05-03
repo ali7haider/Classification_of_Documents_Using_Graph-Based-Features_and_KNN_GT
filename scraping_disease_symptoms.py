@@ -129,7 +129,7 @@ def scrape_articles(url_base, pages, min_articles):
         for link in links:
             data = scrape_data(link)
             if data and data.get('words_count', 0) > 500:
-                articles_data.append({'index': articles_count + 1, 'label': 'Disease_Symptoms', **data})
+                articles_data.append({'index': articles_count + 1, 'label': 'disease_symptoms', **data})
                 articles_count += 1
                 if articles_count >= min_articles:
                     return articles_data

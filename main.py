@@ -77,3 +77,31 @@ for test_instance in test_graphs:
     true_labels.append(true_label)
     print(f'Predicted class: {predicted_label} ------- Actual Class: {true_label}')
 
+#--------------------------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------------------------
+#                               3. Evaluation:
+#--------------------------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------------------------
+
+# Evaluation
+accuracy = accuracy_score(true_labels, predicted_labels)
+accuracy_percentage = accuracy * 100
+print("Accuracy: ", accuracy_percentage)
+
+# Compute evaluation metrics
+report = classification_report(test_labels, predicted_labels)
+
+# Print classification report
+print("Classification Report:")
+print(report)
+
+# Compute confusion matrix
+cm = confusion_matrix(test_labels, predicted_labels)
+
+# Plot confusion matrix
+plt.figure(figsize=(8, 6))
+sns.heatmap(cm, annot=True, cmap='Blues', fmt='d', xticklabels=np.unique(train_labels), yticklabels=np.unique(train_labels))
+plt.xlabel('Predicted Labels')
+plt.ylabel('True Labels')
+plt.title('Confusion Matrix')
+plt.show()
